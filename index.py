@@ -2,25 +2,15 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 import random
 import os
-
-# Intento de importar Firebase (Manejo de entorno)
-try:
-    import firebase_admin
-    from firebase_admin import credentials, firestore
-    FIREBASE_AVAILABLE = True
-except ImportError:
-    FIREBASE_AVAILABLE = False
+import json
 
 # ==========================================
-# MOTOR DE BASE DE DATOS (FIREBASE / MOCK)
+# MOTOR DE BASE DE DATOS LOCAL (PERSISTENTE EN JSON)
 # ==========================================
 class MotorBaseDatos:
-    def __init__(self):
-        self.usar_mock = True
-        self.db = None
-        
-        # Base de datos simulada en memoria (Mock) por si no hay credenciales
-        self.mock_db = {
+    def __init__(self, archivo_db="db_local.json"):
+        self.archivo_db = archivo_db
+        self.default_db = {
             "cursos": [
                 {"id": 101, "nombre": "Matemáticas Básicas", "relevancia": 85, "dificultad": 3},
                 {"id": 102, "nombre": "Programación en Python", "relevancia": 95, "dificultad": 5},
@@ -30,32 +20,35 @@ class MotorBaseDatos:
             ],
             "progresos": []
         }
+        self.cargar_datos()
 
-        if FIREBASE_AVAILABLE and os.path.exists("serviceAccountKey.json"):
+    def cargar_datos(self):
+        if os.path.exists(self.archivo_db):
             try:
-                cred = credentials.Certificate("serviceAccountKey.json")
-                firebase_admin.initialize_app(cred)
-                self.db = firestore.client()
-                self.usar_mock = False
-                print("Conectado a Firebase exitosamente.")
+                with open(self.archivo_db, "r", encoding="utf-8") as f:
+                    self.data = json.load(f)
             except Exception as e:
-                print(f"Error al conectar a Firebase: {e}. Usando modo simulado.")
+                print(f"Error al cargar base de datos local: {e}. Usando valores predeterminados.")
+                self.data = self.default_db.copy()
         else:
-            print("No se encontró serviceAccountKey.json o firebase_admin no está instalado. Usando BD simulada.")
+            self.data = self.default_db.copy()
+            self.guardar_datos()
+
+    def guardar_datos(self):
+        try:
+            with open(self.archivo_db, "w", encoding="utf-8") as f:
+                json.dump(self.data, f, indent=4, ensure_ascii=False)
+        except Exception as e:
+            print(f"Error al guardar base de datos local: {e}")
 
     def obtener_cursos(self):
-        if not self.usar_mock:
-            # Lógica real de Firebase
-            docs = self.db.collection('cursos').stream()
-            return [doc.to_dict() for doc in docs]
-        return self.mock_db["cursos"]
+        return self.data.get("cursos", [])
 
     def guardar_progreso(self, estudiante, modulo):
-        if not self.usar_mock:
-            # Lógica real de Firebase
-            self.db.collection('progresos').add({"estudiante": estudiante, "modulo": modulo})
-        else:
-            self.mock_db["progresos"].append({"estudiante": estudiante, "modulo": modulo})
+        if "progresos" not in self.data:
+            self.data["progresos"] = []
+        self.data["progresos"].append({"estudiante": estudiante, "modulo": modulo})
+        self.guardar_datos()
 
 # ==========================================
 # 1. ESTRUCTURA LINEAL: COLA (QUEUE)
@@ -86,7 +79,7 @@ class GrafoRendimiento:
         self.grafo = {}
 
     def agregar_transicion(self, modulo_origen, modulo_destino, tasa_abandono):
-        if modulo_origen not screening in self.grafo:
+        if modulo_origen not in self.grafo:
             self.grafo[modulo_origen] = {}
         self.grafo[modulo_origen][modulo_destino] = tasa_abandono
 
@@ -276,7 +269,7 @@ class AplicacionAprendizaje(tk.Tk):
         # Guardar en base de datos
         self.db.guardar_progreso(elemento["estudiante"], elemento["modulo"])
         self.actualizar_vista_cola()
-        messagebox.showinfo("Sincronización Exitosa", f"Sincronizado en Firebase:\n{elemento}")
+        messagebox.showinfo("Sincronización Exitosa", f"Sincronizado en Base de Datos Local:\n{elemento}")
 
     # --- PESTAÑA 3: ABANDONO (NON-LINEAR - GRAPH) ---
     def construir_pestana_abandono(self, frame):

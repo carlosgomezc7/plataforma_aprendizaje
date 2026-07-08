@@ -1,0 +1,35 @@
+{
+    "cursos": [
+        {
+            "id": 101,
+            "nombre": "Matemáticas Básicas",
+            "relevancia": 85,
+            "dificultad": 3
+        },
+        {
+            "id": 102,
+            "nombre": "Programación en Python",
+            "relevancia": 95,
+            "dificultad": 5
+        },
+        {
+            "id": 103,
+            "nombre": "Historia del Arte",
+            "relevancia": 60,
+            "dificultad": 2
+        },
+        {
+            "id": 104,
+            "nombre": "Física Cuántica",
+            "relevancia": 90,
+            "dificultad": 9
+        },
+        {
+            "id": 105,
+            "nombre": "Estructuras de Datos",
+            "relevancia": 99,
+            "dificultad": 8
+        }
+    ],
+    "progresos": []
+}
