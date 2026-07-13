@@ -31,5 +31,14 @@
             "dificultad": 8
         }
     ],
-    "progresos": []
+    "progresos": [
+        {
+            "estudiante": "Juan_Perez",
+            "modulo": "Módulo 7"
+        },
+        {
+            "estudiante": "Juan_Perez",
+            "modulo": "Módulo 1"
+        }
+    ]
 }
